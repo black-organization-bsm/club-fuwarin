@@ -26,6 +26,17 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/** 클럽 말랑말랑 브랜드 톤 (말랑·소프트) */
+export const Brand = {
+  primary: '#208AEF',
+  primarySoft: '#E6F4FE',
+  primaryDark: '#0B66C2',
+  danger: '#FF6B6B',
+  warn: '#FF9F43',
+  cardRadius: 24,
+  pillRadius: 999,
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
