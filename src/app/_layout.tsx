@@ -1,15 +1,28 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { SpendingProvider } from '@/features/spending/SpendingProvider';
 
-export default function TabLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+      <SpendingProvider>
+        <AnimatedSplashOverlay />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="add-game"
+            options={{ presentation: 'modal', headerShown: true, title: '게임 추가' }}
+          />
+          <Stack.Screen
+            name="add-expense"
+            options={{ presentation: 'modal', headerShown: true, title: '지출 추가' }}
+          />
+          <Stack.Screen name="game/[id]" options={{ headerShown: true, title: '' }} />
+        </Stack>
+      </SpendingProvider>
     </ThemeProvider>
   );
 }
