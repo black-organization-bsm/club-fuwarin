@@ -18,3 +18,9 @@ export function formatDay(iso: string): string {
   const d = new Date(iso);
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
+
+/** ISO -> "6.21" (홈/상세 리스트의 짧은 날짜) */
+export function shortDay(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}

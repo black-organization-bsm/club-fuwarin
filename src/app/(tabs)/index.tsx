@@ -11,14 +11,8 @@ import { SoftCard } from '@/components/soft-card';
 import { ThemedText } from '@/components/themed-text';
 import { Brand, Spacing } from '@/constants/theme';
 import { currentMonthKey, gamesByMonth, monthChangePct, monthKey, monthSpent } from '@/features/spending/aggregate';
-import { formatKRW } from '@/features/spending/format';
+import { formatKRW, shortDay } from '@/features/spending/format';
 import { useSpending } from '@/features/spending/SpendingProvider';
-
-/** ISO -> "6.21" */
-function shortDay(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}.${d.getDate()}`;
-}
 
 export default function HomeScreen() {
   const router = useRouter();

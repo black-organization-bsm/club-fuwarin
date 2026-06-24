@@ -13,14 +13,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Brand, Spacing } from '@/constants/theme';
 import { sum } from '@/features/spending/aggregate';
 import { useEntrySheet } from '@/features/spending/EntrySheetProvider';
-import { formatKRW } from '@/features/spending/format';
+import { formatKRW, shortDay } from '@/features/spending/format';
 import { useSpending } from '@/features/spending/SpendingProvider';
-
-/** ISO -> "6.21" */
-function shortDay(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}.${d.getDate()}`;
-}
 
 export default function GameDetailScreen() {
   const router = useRouter();
@@ -87,7 +81,7 @@ export default function GameDetailScreen() {
                 {i > 0 ? <Divider /> : null}
                 <ExpenseListItem
                   expense={e}
-                  gameName={e.memo ?? '기록'}
+                  gameName={e.memo ?? game.name}
                   subtitle={`${e.source === 'auto' ? '자동 감지' : '직접 기록'} · ${shortDay(e.spentAt)}`}
                   onPress={() => openEdit(e)}
                 />
