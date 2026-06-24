@@ -15,6 +15,7 @@ type SoftButtonProps = {
   style?: ViewStyle;
 };
 
+/** 다크 셸용 버튼. primary=블루 채움, soft=표면, danger=삭제 텍스트, ghost=투명 */
 export function SoftButton({
   label,
   onPress,
@@ -27,15 +28,21 @@ export function SoftButton({
 
   const bg: Record<Variant, string> = {
     primary: Brand.primary,
-    soft: theme.backgroundElement,
-    danger: Brand.danger,
+    soft: theme.backgroundSelected,
+    danger: 'transparent',
     ghost: 'transparent',
   };
   const fg: Record<Variant, string> = {
     primary: '#ffffff',
     soft: theme.text,
-    danger: '#ffffff',
+    danger: Brand.danger,
     ghost: theme.textSecondary,
+  };
+  const border: Record<Variant, string> = {
+    primary: Brand.primary,
+    soft: theme.border,
+    danger: 'transparent',
+    ghost: 'transparent',
   };
 
   return (
@@ -47,7 +54,7 @@ export function SoftButton({
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg[variant] },
+        { backgroundColor: bg[variant], borderColor: border[variant] },
         (disabled || loading) && styles.disabled,
         pressed && styles.pressed,
         style,
@@ -65,20 +72,20 @@ export function SoftButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 52,
-    borderRadius: Brand.cardRadius,
+    minHeight: 50,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.three,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14.5,
   },
   disabled: {
     opacity: 0.45,
   },
   pressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.85,
   },
 });

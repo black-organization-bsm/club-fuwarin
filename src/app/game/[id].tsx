@@ -12,13 +12,21 @@ import { SoftCard } from '@/components/soft-card';
 import { ThemedText } from '@/components/themed-text';
 import { Brand, Spacing } from '@/constants/theme';
 import { sum } from '@/features/spending/aggregate';
-import { formatWon } from '@/features/spending/format';
+import { useEntrySheet } from '@/features/spending/EntrySheetProvider';
+import { formatKRW } from '@/features/spending/format';
 import { useSpending } from '@/features/spending/SpendingProvider';
+
+/** ISO -> "6.21" */
+function shortDay(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}
 
 export default function GameDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { games, expenses, removeExpense, removeGame } = useSpending();
+  const { games, expenses, removeGame } = useSpending();
+  const { openNew, openEdit } = useEntrySheet();
 
   const game = useMemo(() => games.find((g) => g.id === id), [games, id]);
   const gameExpenses = useMemo(
@@ -34,13 +42,6 @@ export default function GameDetailScreen() {
         <EmptyState emoji="❓" title="게임을 찾을 수 없어요" />
       </Screen>
     );
-  }
-
-  function confirmDeleteExpense(expenseId: string) {
-    Alert.alert('지출 삭제', '이 지출 기록을 삭제할까요?', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => removeExpense(expenseId) },
-    ]);
   }
 
   function confirmDeleteGame() {
@@ -61,68 +62,72 @@ export default function GameDetailScreen() {
     <Screen withTabInset={false}>
       <Stack.Screen options={{ title: game.name }} />
 
-      <SoftCard accent>
-        <ThemedText style={styles.emoji}>{game.emoji}</ThemedText>
-        <ThemedText type="smallBold" style={styles.accentText}>
+      <SoftCard>
+        <View style={[styles.emojiBadge, { backgroundColor: game.color }]}>
+          <ThemedText style={styles.emoji}>{game.emoji}</ThemedText>
+        </View>
+        <ThemedText type="smallBold" themeColor="textSecondary">
           {game.name} 누적 지출
         </ThemedText>
-        <ThemedText style={styles.bigAmount}>{formatWon(total)}</ThemedText>
+        <ThemedText style={styles.bigAmount}>{formatKRW(total)}</ThemedText>
       </SoftCard>
 
       <OpportunityCard title="이 게임에 쓴 돈이면" amount={total} />
 
-      <SoftButton
-        label="＋ 이 게임에 지출 추가"
-        onPress={() => router.push({ pathname: '/add-expense', params: { gameId: game.id } })}
-      />
+      <SoftButton label="＋ 이 게임에 지출 추가" onPress={() => openNew(game.id)} />
 
       <View style={styles.listSection}>
-        <ThemedText type="smallBold" style={styles.sectionTitle}>
-          지출 내역
-        </ThemedText>
+        <ThemedText style={styles.sectionTitle}>지출 내역</ThemedText>
         {gameExpenses.length === 0 ? (
           <EmptyState emoji="🫧" title="아직 지출 기록이 없어요" />
         ) : (
-          <SoftCard>
+          <SoftCard flush style={styles.listCard}>
             {gameExpenses.map((e, i) => (
               <View key={e.id}>
                 {i > 0 ? <Divider /> : null}
-                <ExpenseListItem expense={e} onLongPress={() => confirmDeleteExpense(e.id)} />
+                <ExpenseListItem
+                  expense={e}
+                  gameName={e.memo ?? '기록'}
+                  subtitle={`${e.source === 'auto' ? '자동 감지' : '직접 기록'} · ${shortDay(e.spentAt)}`}
+                  onPress={() => openEdit(e)}
+                />
               </View>
             ))}
-            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-              길게 눌러 삭제
-            </ThemedText>
           </SoftCard>
         )}
       </View>
 
-      <SoftButton label="게임 삭제" variant="ghost" onPress={confirmDeleteGame} />
+      <SoftButton label="게임 삭제" variant="danger" onPress={confirmDeleteGame} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  emoji: {
-    fontSize: 40,
+  emojiBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  accentText: {
-    color: Brand.primaryDark,
+  emoji: {
+    fontSize: 28,
   },
   bigAmount: {
-    fontSize: 36,
-    lineHeight: 44,
+    marginTop: 2,
+    fontSize: 34,
     fontWeight: '800',
-    color: Brand.primaryDark,
+    letterSpacing: -0.5,
+    color: Brand.primaryText,
   },
   listSection: {
     gap: Spacing.three,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '700',
   },
-  hint: {
-    textAlign: 'center',
-    marginTop: Spacing.two,
+  listCard: {
+    paddingHorizontal: 15,
   },
 });

@@ -1,100 +1,170 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Divider } from '@/components/divider';
 import { EmptyState } from '@/components/empty-state';
 import { ExpenseListItem } from '@/components/expense-list-item';
-import { OpportunityCard } from '@/components/opportunity-card';
+import { GameCard } from '@/components/game-card';
 import { Screen } from '@/components/screen';
-import { SoftButton } from '@/components/soft-button';
+import { SegmentBar } from '@/components/segment-bar';
 import { SoftCard } from '@/components/soft-card';
 import { ThemedText } from '@/components/themed-text';
 import { Brand, Spacing } from '@/constants/theme';
-import { monthSpent, sum } from '@/features/spending/aggregate';
-import { formatWon } from '@/features/spending/format';
+import { currentMonthKey, gamesByMonth, monthChangePct, monthKey, monthSpent } from '@/features/spending/aggregate';
+import { formatKRW } from '@/features/spending/format';
 import { useSpending } from '@/features/spending/SpendingProvider';
+
+/** ISO -> "6.21" */
+function shortDay(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const { games, expenses } = useSpending();
+  const now = new Date();
+  const key = currentMonthKey(now);
 
-  const thisMonth = useMemo(() => monthSpent(expenses), [expenses]);
-  const total = useMemo(() => sum(expenses), [expenses]);
+  // React Compiler가 자동 메모이즈하므로 수동 useMemo 없이 그대로 파생한다.
+  const thisMonth = monthSpent(expenses, key);
+  const changePct = monthChangePct(expenses, now);
+  const byGame = gamesByMonth(games, expenses, key);
 
-  const recent = useMemo(
-    () => [...expenses].sort((a, b) => b.spentAt.localeCompare(a.spentAt)).slice(0, 5),
-    [expenses],
-  );
+  const recent = expenses
+    .filter((e) => monthKey(e.spentAt) === key)
+    .sort((a, b) => b.spentAt.localeCompare(a.spentAt))
+    .slice(0, 3);
+
+  const gameName = (id: string) => games.find((g) => g.id === id)?.name ?? '게임';
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <ThemedText type="small" themeColor="textSecondary">
-          클럽 말랑말랑
-        </ThemedText>
-        <ThemedText type="subtitle">너 가챠에{'\n'}얼마 썼니?</ThemedText>
-      </View>
-
-      <SoftCard accent>
-        <ThemedText type="smallBold" style={styles.accentText}>
-          이번 달 지출
-        </ThemedText>
-        <ThemedText style={styles.bigAmount}>{formatWon(thisMonth)}</ThemedText>
-        <ThemedText type="small" style={styles.accentText}>
-          누적 총 {formatWon(total)}
-        </ThemedText>
+      {/* 이번 달 지출 카드 */}
+      <SoftCard>
+        <View style={styles.rowBetween}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            {now.getFullYear()}년 {now.getMonth() + 1}월 지출
+          </ThemedText>
+          {changePct != null ? (
+            <View style={[styles.deltaBadge, changePct >= 0 ? styles.deltaUp : styles.deltaDown]}>
+              <ThemedText style={[styles.deltaText, changePct >= 0 ? styles.deltaUpText : styles.deltaDownText]}>
+                {changePct >= 0 ? '▲' : '▼'} {Math.abs(changePct)}%
+              </ThemedText>
+            </View>
+          ) : null}
+        </View>
+        <ThemedText style={styles.bigAmount}>{formatKRW(thisMonth)}</ThemedText>
+        <SegmentBar segments={byGame.map((r) => ({ key: r.game.id, value: r.total, color: r.game.color }))} />
+        {byGame.length > 0 ? (
+          <ThemedText type="small" themeColor="textTertiary">
+            {byGame.map((r) => r.game.name).join(' · ')} 합산
+          </ThemedText>
+        ) : null}
       </SoftCard>
 
-      <OpportunityCard title="이번 달, 이만큼 질렀어요" amount={thisMonth} />
-
-      <SoftButton label="＋ 지출 추가하기" onPress={() => router.push('/add-expense')} />
-
-      <View style={styles.recentSection}>
-        <ThemedText type="smallBold" style={styles.sectionTitle}>
-          최근 지출
-        </ThemedText>
-        {recent.length === 0 ? (
-          <EmptyState
-            emoji="🫧"
-            title="아직 기록이 없어요"
-            description="첫 지출을 기록하고 기회비용을 확인해보세요."
-          />
+      {/* 게임별 지출 (이번 달) */}
+      <View style={styles.section}>
+        <View style={styles.rowBetween}>
+          <ThemedText style={styles.sectionTitle}>게임별 지출</ThemedText>
+          <ThemedText type="small" themeColor="textTertiary">
+            이번 달
+          </ThemedText>
+        </View>
+        {byGame.length === 0 ? (
+          <EmptyState emoji="🫧" title="이번 달 지출이 없어요" description="아래 ＋ 버튼으로 기록해보세요." />
         ) : (
-          <SoftCard>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cards}>
+            {byGame.map((r) => (
+              <GameCard
+                key={r.game.id}
+                game={r.game}
+                total={r.total}
+                count={r.count}
+                onPress={() => router.push({ pathname: '/game/[id]', params: { id: r.game.id } })}
+              />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+      {/* 최근 내역 */}
+      {recent.length > 0 ? (
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <ThemedText style={styles.sectionTitle}>최근 내역</ThemedText>
+            <ThemedText type="linkPrimary" onPress={() => router.navigate('/log')}>
+              더 보기
+            </ThemedText>
+          </View>
+          <SoftCard flush style={styles.listCard}>
             {recent.map((e, i) => (
               <View key={e.id}>
                 {i > 0 ? <Divider /> : null}
                 <ExpenseListItem
                   expense={e}
-                  emoji={games.find((g) => g.id === e.gameId)?.emoji ?? '🎮'}
+                  gameName={gameName(e.gameId)}
+                  subtitle={`${e.memo ?? '기록'} · ${shortDay(e.spentAt)}`}
                 />
               </View>
             ))}
           </SoftCard>
-        )}
-      </View>
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    gap: Spacing.one,
-  },
-  accentText: {
-    color: Brand.primaryDark,
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   bigAmount: {
-    fontSize: 40,
-    lineHeight: 48,
+    marginTop: 4,
+    fontSize: 34,
     fontWeight: '800',
-    color: Brand.primaryDark,
+    letterSpacing: -1,
   },
-  recentSection: {
+  deltaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  deltaUp: {
+    backgroundColor: 'rgba(240,102,77,0.15)',
+  },
+  deltaDown: {
+    backgroundColor: Brand.primarySoft,
+  },
+  deltaText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  deltaUpText: {
+    color: Brand.danger,
+  },
+  deltaDownText: {
+    color: Brand.primaryText,
+  },
+  section: {
     gap: Spacing.three,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cards: {
+    gap: Spacing.two,
+    paddingVertical: 2,
+  },
+  listCard: {
+    paddingHorizontal: 15,
   },
 });

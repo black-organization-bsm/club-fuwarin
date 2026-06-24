@@ -4,18 +4,24 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type SoftCardProps = ViewProps & {
-  /** 강조 카드(브랜드 소프트 배경) 여부 */
+  /** 강조 카드 — 액센트 soft 톤 배경 */
   accent?: boolean;
+  /** 패딩 없이 컨테이너만 (리스트 카드 등) */
+  flush?: boolean;
 };
 
-/** 둥글고 말랑한 카드 컨테이너 */
-export function SoftCard({ accent = false, style, children, ...rest }: SoftCardProps) {
+/** 둥근 다크 표면 카드 (테두리 포함) */
+export function SoftCard({ accent = false, flush = false, style, children, ...rest }: SoftCardProps) {
   const theme = useTheme();
   return (
     <View
       style={[
         styles.card,
-        { backgroundColor: accent ? Brand.primarySoft : theme.backgroundElement },
+        {
+          backgroundColor: accent ? Brand.primarySoft : theme.backgroundElement,
+          borderColor: theme.border,
+        },
+        flush ? styles.flush : styles.padded,
         style,
       ]}
       {...rest}>
@@ -27,7 +33,14 @@ export function SoftCard({ accent = false, style, children, ...rest }: SoftCardP
 const styles = StyleSheet.create({
   card: {
     borderRadius: Brand.cardRadius,
-    padding: Spacing.four,
-    gap: Spacing.three,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  padded: {
+    padding: Spacing.three,
+    gap: Spacing.two,
+  },
+  flush: {
+    gap: 0,
   },
 });

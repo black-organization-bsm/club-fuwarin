@@ -2,73 +2,99 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Brand, Spacing } from '@/constants/theme';
-import { formatWon } from '@/features/spending/format';
+import { formatKRW } from '@/features/spending/format';
 import type { Game } from '@/features/spending/types';
 import { useTheme } from '@/hooks/use-theme';
 
 type GameCardProps = {
   game: Game;
+  /** 표시 금액 (이번 달 또는 누적) */
   total: number;
+  /** 건수 — 배너 좌상단 뱃지 */
+  count?: number;
   onPress: () => void;
 };
 
-export function GameCard({ game, total, onPress }: GameCardProps) {
+/**
+ * 홈의 가로 스크롤용 게임 카드.
+ * 상단은 게임 대표색 배너(저작권 포스터 대신 색+이모지 플레이스홀더),
+ * 하단은 이름과 금액.
+ */
+export function GameCard({ game, total, count, onPress }: GameCardProps) {
   const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${game.name}, 누적 지출 ${formatWon(total)}`}
+      accessibilityLabel={`${game.name}, ${formatKRW(total)}`}
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: theme.backgroundElement },
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         pressed && styles.pressed,
       ]}>
-      <View style={[styles.emojiCircle, { backgroundColor: Brand.primarySoft }]}>
+      <View style={[styles.banner, { backgroundColor: game.color }]}>
+        {count != null ? (
+          <View style={styles.badge}>
+            <ThemedText style={styles.badgeText}>{count}건</ThemedText>
+          </View>
+        ) : null}
         <ThemedText style={styles.emoji}>{game.emoji}</ThemedText>
       </View>
-      <View style={styles.info}>
-        <ThemedText type="smallBold" numberOfLines={1}>
+      <View style={styles.body}>
+        <ThemedText type="small" themeColor="text" numberOfLines={1} style={styles.name}>
           {game.name}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          누적 지출
-        </ThemedText>
+        <ThemedText style={styles.amount}>{formatKRW(total)}</ThemedText>
       </View>
-      <ThemedText type="smallBold" style={styles.total}>
-        {formatWon(total)}
-      </ThemedText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Brand.cardRadius,
+    width: 128,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
-  emojiCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
+  banner: {
+    height: 74,
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: 9,
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    left: 9,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
   },
   emoji: {
-    fontSize: 24,
+    fontSize: 30,
   },
-  info: {
-    flex: 1,
-    gap: 2,
+  body: {
+    padding: Spacing.two,
+    paddingTop: 10,
+    gap: 5,
   },
-  total: {
-    color: Brand.primary,
-    fontSize: 16,
+  name: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  amount: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Brand.primaryText,
   },
 });

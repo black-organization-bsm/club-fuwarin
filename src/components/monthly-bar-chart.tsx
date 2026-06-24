@@ -53,15 +53,15 @@ export function MonthlyBarChart({ data, height = 180 }: MonthlyBarChartProps) {
                   y={y}
                   width={barW}
                   height={barH}
-                  rx={8}
-                  fill={isCurrent ? Brand.primary : Brand.primarySoft}
+                  rx={7}
+                  fill={isCurrent ? Brand.danger : '#4677c4'}
                 />
                 <SvgText
                   x={i * slot + slot / 2}
                   y={height - 6}
                   fontSize={11}
                   fontWeight={isCurrent ? '700' : '500'}
-                  fill={isCurrent ? Brand.primary : theme.textSecondary}
+                  fill={isCurrent ? Brand.dangerText : theme.textSecondary}
                   textAnchor="middle">
                   {d.label}
                 </SvgText>
